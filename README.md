@@ -84,8 +84,8 @@ FAMS Project/
 │
 ├── TrainingImage/ # Captured student images
 ├── TrainingImageLabel/ # Reserved (future labels/models)
-├── StudentDetails/ # Attendance CSV backups
-├── Attendance/ # Student CSV backups
+├── StudentDetails/ # stores student data & csv backups
+├── Attendance/ # stores attendance logs & Student CSV backups
 ├── FAMS_Main.py # Main application file
 └── requirements.txt # Python dependencies
 
@@ -140,8 +140,7 @@ This project is open-source under the **MIT License**.
 ## 👨‍💻 Author
 
 **Developed by:** Kella Shasidhar  
-📧 Email: [shasidharkella814@gmail.com]  
-🐙 GitHub: [shasidharkella-8514](https://github.com/shasidharkella-8514 )  
+📧 Email: [shasidharkella814@gmail.com]   
 💼 LinkedIn: [shasidharkella](www.linkedin.com/in/shasidhar-kella-2087a1313)
 
 ---
