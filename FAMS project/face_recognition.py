@@ -26,6 +26,7 @@ import customtkinter as ctk
 from tkinter import messagebox, ttk
 import tkinter as tk
 import pandas as pd
+import csv
 
 
 def admin_attendance_window():
@@ -187,6 +188,30 @@ def gui_log(textbox, message):
         pass
     print(message)
 
+# ------------------------ CSV AUTO-UPDATE  ------------------------
+STUDENTS_CSV = r"C:\Users\DELL\Videos\Captures\FAMS project\Attendance\students_data.csv"
+ATTENDANCE_CSV = r"C:\Users\DELL\OneDrive\Desktop\FAMS project\StudentDetails\attendance_records.csv"
+
+def append_student_to_csv(enrollment, name, department):
+    """Append new student info to CSV when registered."""
+    file_exists = os.path.isfile(STUDENTS_CSV)
+    with open(STUDENTS_CSV, mode="a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        # write header only if file didn't exist
+        if not file_exists:
+            writer.writerow(["Enrollment", "Name", "Department", "Date_Registered", "Time_Registered"])
+        now = datetime.now()
+        writer.writerow([enrollment, name, department, now.strftime("%Y-%m-%d"), now.strftime("%H:%M:%S")])
+
+def append_attendance_to_csv(enrollment, name, department, date_str, time_str):
+    """Append attendance record to CSV every time attendance is marked."""
+    file_exists = os.path.isfile(ATTENDANCE_CSV)
+    with open(ATTENDANCE_CSV, mode="a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        if not file_exists:
+            writer.writerow(["Enrollment", "Name", "Department", "Date", "Time"])
+        writer.writerow([enrollment, name, department, date_str, time_str])
+
 # ------------------------ DEEPFACE PRELOAD ------------------------
 MODEL_CACHE = {"model": None}
 def preload_deepface_model(log_box=None):
@@ -236,11 +261,17 @@ def register_student(enrollment, name, department, log_box):
             cur.execute("INSERT INTO students (enrollment, name, department) VALUES (%s,%s,%s)",
                         (enrollment, name, department))
             conn.commit()
+            append_student_to_csv(enrollment, name, department)
+            gui_log(log_box, f"📁 Student added to CSV backup: {enrollment}, {name}")
+
             gui_log(log_box, f"🗂️ Student record inserted: {enrollment}, {name}, {department}")
         except mysql.connector.IntegrityError:
             cur.execute("UPDATE students SET name=%s, department=%s WHERE enrollment=%s",
                         (name, department, enrollment))
             conn.commit()
+            append_student_to_csv(enrollment, name, department)
+            gui_log(log_box, f"📁 Student added to CSV backup: {enrollment}, {name}")
+
             gui_log(log_box, f"♻️ Student record updated: {enrollment}, {name}, {department}")
         except Exception as e:
             gui_log(log_box, f"❌ DB error while saving student: {e}")
@@ -385,6 +416,9 @@ def recognize_loop(log_box):
                                                      (enrollment_found, name_found, department_val, time_str, date_str))
                                         conn2.commit()
                                         gui_log(log_box, f"🟢 Marked attendance: {enrollment_found} - {name_found} ({department_val})")
+                                        append_attendance_to_csv(enrollment_found, name_found, department_val, date_str, time_str)
+                                        gui_log(log_box, "💾 Attendance record backed up to CSV.")
+
                                     except Exception as e:
                                         gui_log(log_box, f"❌ Attendance DB insert failed: {e}")
                                     finally:
@@ -438,6 +472,9 @@ def manual_attendance_mark(enroll, name, dept, log_box):
             VALUES (%s, %s, %s, %s, %s)
         """, (enroll, name_found, dept_found, now.strftime("%H:%M:%S"), now.strftime("%Y-%m-%d")))
         conn.commit()
+        append_attendance_to_csv(enroll, name_found, dept_found, now.strftime("%Y-%m-%d"), now.strftime("%H:%M:%S"))
+        gui_log(log_box, "💾 Manual attendance backed up to CSV.")
+
 
         gui_log(log_box, f"📝 Manual attendance marked: {enroll} - {name_found} ({dept_found})")
         messagebox.showinfo("Success", "Manual attendance recorded.")
@@ -676,6 +713,9 @@ def build_gui():
 
     app.mainloop()
 
+
+
 # ------------------------ ENTRYPOINT -----------------------------
 if __name__ == "__main__":
     build_gui()
+
